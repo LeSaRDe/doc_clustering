@@ -10,7 +10,7 @@ SIM_THRESHOLD = 0.4
 def get_words_from_db(db_file, table_name):
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
-    cursor.execute('''SELECT key FROM %s limit 300''' % table_name)
+    cursor.execute('''SELECT word FROM %s limit 300''' % table_name)
     rows = cursor.fetchall()
     return rows
 
@@ -83,4 +83,4 @@ def main(db_file, table_name):
         print "%s - %s" % (label, full_word_list[idx_map[i]])
 
 
-main('all_words.db', 'all_words_count_010119')
+main('20news-18828.db', 'all_words_count')

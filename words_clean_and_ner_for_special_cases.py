@@ -34,6 +34,15 @@ def rm_person_name(word_tokens):
 
 def update_db(values):
     cur.execute("UPDATE docs SET word_list=? WHERE doc_id=?", values)
+    conn.commit()
+
+
+def rm_digs_and_person_name(word_tokens):
+    new_words_tokens = []
+    for w in word_tokens:
+        if not w.isdigit():
+            new_words_tokens = new_words_tokens + rm_person_name(w.replace('_', ' ').split())
+    return new_words_tokens
 
 
 def sent_clean(doc_words, ss, stop_words_list):
@@ -42,8 +51,12 @@ def sent_clean(doc_words, ss, stop_words_list):
     tokened_words = word_tokenizer.tokenize(ss)
     try:
         nered_words = rm_person_name(tokened_words)
-    except Exception as ee:
-        return "[NER server error]%s" % ee
+    except:
+        try:
+            nered_words = rm_digs_and_person_name(tokened_words)
+        except Exception as ee:
+            print "\tSecond attempt fails."
+            return "[NER server error]%s" % ee
 
     for word in nered_words:
         if word.lower() not in stop_words_list and not word.isdigit() and (pp.match(word) is not None):
@@ -58,7 +71,7 @@ def sent_clean(doc_words, ss, stop_words_list):
 
 def select_txt_to_process():
     # cur.execute("SELECT * FROM docs WHERE word_list is null limit 100")
-    cur.execute("SELECT * FROM docs WHERE word_list like '%Ignore this doc%'")
+    cur.execute("SELECT * FROM docs WHERE word_list like '%NER server error%'")
     # cur.execute("SELECT * FROM docs WHERE doc_id='rec.sport.hockey/53613'")
     return cur.fetchall()
 
@@ -70,38 +83,26 @@ def raw_txt_cleanup():
         if w:
             stop_words.append(w)
 
-    cur.execute("SELECT count(*) FROM docs WHERE word_list is not null")
-    cnt = int(cur.fetchone()[0])
     txt_to_process = select_txt_to_process()
-    while len(txt_to_process) > 0:
-        for i, row in enumerate(txt_to_process):
-            if DEBUG:
-                print "\n\n==[Doc %s]==\n" % row[0]
-            final_words = dict()
-            sents = row[1].split('\n')
-            for j, sent in enumerate(sents):
-                if DEBUG:
-                    print "\n\t[%s]Sent: %s" % (j, sent),
-                # if len(sent) > 3000:
-                #     final_words = "[Invalid sentence]Ignore this doc."
-                #     print "[%s]%s" % (row[0], final_words)
-                #     break
-                final_words = sent_clean(final_words, str(sent), stop_words)
-                if not isinstance(final_words, dict):
-                    break
-            if DEBUG:
-                print "\n\tFinal words: %s" % final_words
-            else:
-                update_db(values=(str(final_words), row[0]))
 
-        conn.commit()
-        cnt = cnt + len(txt_to_process)
-        print "\n%s records processed." % cnt
-        txt_to_process = select_txt_to_process()
+    for i, row in enumerate(txt_to_process):
+        print "\n\n==[Doc %s]==\n" % row[0]
+        final_words = dict()
+        sents = row[1].split('\n')
+        for j, sent in enumerate(sents):
+            if DEBUG:
+                print "\n\t[%s]Sent: %s" % (j, sent),
+            final_words = sent_clean(final_words, str(sent), stop_words)
+            if not isinstance(final_words, dict):
+                break
+        if DEBUG:
+            print "\n\tFinal words: %s" % final_words
+        else:
+            update_db(values=(str(final_words), row[0]))
+        print "\n%s processed." % row[0]
 
     cur.close()
     conn.close()
-
 
 
 def main():

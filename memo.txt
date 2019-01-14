@@ -1,0 +1,22 @@
+sudo pip install -U nltk
+import nltk
+nltk.download('punkt')
+% pip install sqlitebiter
+
+StanfordNLP server:
+1) Server failure detection
+    - How to know the server is donw?
+2) Server restart
+    - How to restart the server?
+Solution:
+    -The server is running multi-threads, it is able to auto-restart.
+3) Client response to the server failure
+    - How to know the server failed?
+    - How to know if the server failed because the client's request or other reasons?
+4) Server probe and reconnection
+    - What should the client do after the server failure and before the server become avaliable again?
+    - How to deal with the most recent failed request?
+    - How to reconnect and resume the work?
+Solution:
+    - Try catch the error of the failed request
+    - Discard the annotated results of the current document, instead, save the error message in the word_list column and deal with it later
