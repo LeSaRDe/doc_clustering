@@ -20,3 +20,45 @@ Solution:
 Solution:
     - Try catch the error of the failed request
     - Discard the annotated results of the current document, instead, save the error message in the word_list column and deal with it later
+
+Step1: Create database and schema
+    Table1: Documents
+        CREATE TABLE docs (doc_id TEXT NOT NULL UNIQUE, pre_ner TEXT, word_list TEXT);
+        CREATE INDEX doc_idx ON docs (doc_id);
+        "pre_ner" is pre-cleaned txt file, composed with sentences and punctuations, in one line.
+        word_list is a dict of words of the doc, formatted as str(dict), use eval() to convert back to a dict
+    Table2: Words and counts
+        CREATE TABLE IF NOT EXISTS "all_words_count" (word TEXT, count INTEGER, in_nasari INTEGER);
+        CREATE INDEX word_idx ON all_words_count (word);
+        All words are lower case, not lemmatized.
+        If not in nasari, in_nasari=0, otherwise, =1
+    Table3: Word pair sim
+        CREATE TABLE IF NOT EXISTS "pairwise_sim" (word_pair TEXT not NULL UNIQUE, sim REAL);
+        CREATE INDEX word_pair_idx ON pairwise_sim(word_pair);
+        DROP TABLE pairwise_sim;
+
+Step2: init_insert_all_docs_to_db.py
+Input: Raw text data files
+Output: Pre-cleaned txt, save in table docs(pre_ner), ready for NER
+
+Step3: words_clean_and_ner.py
+Input: Pre-cleaned txt from step2
+Output: list of words for a document, save in table docs(word_list)
+Note: In case CoreNLP timeout on long txt, save error message in the db table
+
+Step3-1: words_clean_and_ner_for_special_cases.py
+Run this in case the error in Step3
+
+Step4: count_total_words.py
+Input: all words in the docs(word_list)
+Output: counted words, save in table all_words_count(word, count)
+
+Step5: mark_nonexist_NASARI.py
+Input: all words in the docs(word_list)
+Output: Mark the non-exist words in table all_words_count(in_nasari)
+
+Step6: cal_word_pair_sim.py
+Input: all words
+Output: Words pair-wise sim, save in table pairwise_sim
+
+Step7: word_clustering.py
