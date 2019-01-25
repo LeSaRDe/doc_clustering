@@ -1,0 +1,104 @@
+Task 1: Document clustering based on DSCTP
+DSCTP is our doc-doc comparison methods based on topological persistence.
+Our first dataset is 20News-18828.
+The output of this task is a hard document clustering directly based on DSCTP
+and some classic hard clustering methods (e.g. spectral clustering).
+
+- Input: The set of documents.
+- Output: A clustering of documents. Each document is assigned to only one cluster.
+
+- Issues:
+
+@ Step 1: Text clean-up
+Similar as what we did on Lee50. We need to keep sentences, and get rid of all
+other weird strings and characters. We may be able to borrow a lot from our
+previous doc-doc comparison code; nevertheless, there must be something else
+that we have to deal with.
+- Input: The original documents.
+- Output: For each text fragment, the output should be a set of sentences.
+Also, these sentences should be stored in a database. The structure of this
+database can be similar as our DSCTP database.
+
+@ Step 2: Sentence annotations
+This step is exactly the same as DSCTP. We can use our previous code.
+- Input: Cleaned text (in sentences) from DB.
+- Output: Annotated text (majorly we need POS and parse trees). The results will
+be written back to DB.
+
+@ Step 3: Run DSCTP algorithm to compare documents pairwise
+We need to compute pairwise doc-doc similarities. These similarities will help
+us to construct the adjacency matrix in the next step. We also would like to
+take advantage of the intermediate results in this step. Please check Task 2.
+- Input: Annotated text from DB.
+- Output: Pairwise doc-doc similarities. We need to store these similarities
+into DB.
+
+@ Step 4: Run spectral clustering over the documents with their pairwise similarities
+We need to set up a threshold for the similarities first. This threshold will
+determine the connectivity of the similarity graph of documents. Actually, we
+may need to run this step multiple times with different threshold so that we
+can observe how the hard clustering behaves.
+- Input: Pairwise doc-doc similarities from DB, and a predetermined threshold
+for the similarities.
+- Output: A hard document clustering. The clustering result should be stored.
+Also, the adjacency matrix with the threshold should also be stored.
+
+@ Step 5: Evaluate the clustering performance, and compare to state-of-the-art
+hard document clustering methods.
+This step is a routine experimental analysis. W.r.t. performance evaluation, we
+need to look into others' papers and try to use the same evaluation methods.
+Also, since 20News does have labels, then it would be easy to check if our
+method is good or bad.
+- Input: The document clustering result.
+- Output: Some performance evaluation results, and comparison results to others.
+
+@ Step 6: Compute topological persistence on a similarity graph of documents.
+We want to argue that even if some hard document clustering methods do have
+good experimental results on the dataset, it does not mean that the document
+clustering problem has been solved. More specifically, we expect to see that
+within a document cluster there are some non-trivial "holes" (in nearly ever dimension)
+from the topological persistence point of view. This topological persistence
+will be computed based on a similarity graph of the documents within a same
+cluster. Ideally, if all documents within the same cluster are of the same
+semantics, then the similarity graph of these documents should form a complete
+graph or at least a very high degree clique. However, if we see a non-trivial
+"hole" from the topological persistence, then it implies that not all of them
+are of the same semantics. In other words, in this cluster, multiple semantics
+exist, and each document may contain only a part of these semantics. To sum up,
+we are looking for "holes" within a document cluster.
+W.r.t. the similarity graph, the most convincing way would be directly taking
+a document cluster from the dataset (because 20News does have labels), and we
+construct this graph over these document. Since we have had doc-doc similarities
+from Step 3, then it would not be too expensive to have this graph.
+W.r.t. computing the topological persistence, JavaPlex is a good option. Though,
+it is a Java library. It supports Matlab as well. Both work. The input would be
+a graph (e.g. expressed in an edge set similar as what NetworkX does), and the
+output will "barcodes" which are "cycles" as what we did in DSCTP except that
+JavaPlex can compute high dimensional "cycles". Also, these "cycles" are
+associated with a "lifetime" which can roughly be thought of as a size of this
+"cycle". The larger the size value, the more significant the "cycle". "Cycles"
+are the "holes" that we are looking for.
+- Input: Documents within a predetermined cluster => Similarity graph.
+- Output: "Barcodes" of the topological persistence computed over the similarity
+graph.
+
+@ Step 7: Pick examples from the "barcodes" to show inconsistent semantics.
+This step is a demonstration. We will look into the "barcodes" obtained in Step 6,
+and try to pull some documents with different semantic components out. Then we
+show that it is not rigorous to merely consider a document to have only one
+semantics.
+
+
+Task 2: Word clustering
+This step is a mandatory one for our new document clustering methods. However,
+clustering over more than 30,000 words is expensive. This difficulty even starts
+from the word comparison stage. Thus, we sure of course would like to reduce
+the amount of words that have to be compared. Here is the idea.
+Since in our new document clustering methods, the rationale roots in the phrase
+level semantic similarity introduced from DSCTP, then it is easy to understand
+that only the words that contribute to the phrase level semantic similarity are
+meaningful to us. Therefore, when we run DSCTP over documents (@ Step 3 in Task 1),
+we can collect the words that are in comparisons, and their word similarities.
+Now that DSCTP will run over all document pairs, then surely we will see all
+meaningful word comparisons. Then we do the word clustering based on these
+collected words. 
