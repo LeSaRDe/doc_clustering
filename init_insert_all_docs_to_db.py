@@ -7,7 +7,7 @@ from nltk.tokenize import sent_tokenize
 
 DEBUG = False
 DOCS_ROOT = "/home/fcmeng/PycharmProjects/20news-18828/"
-conn = sqlite3.connect("20news-18828.db")
+conn = sqlite3.connect("20news18828.db")
 cur = conn.cursor()
 
 # pattern1 = re.compile("^[A-Za-z0-9]*$")
@@ -26,7 +26,7 @@ def insert_pre_ner_to_db(values, cnt):
 def cleanup_invalid_lines(lines):
     cleaned_txt = ''
     for i, line in enumerate(lines):
-        # The first line is "From:", remove this line
+        # The first or second line is "From:", remove this line, but keep the "Subject" line
         if i < 2 and 'From:' in line:
             pass
         elif 'Subject:' in line:
@@ -44,8 +44,9 @@ def rm_emails(txt):
     return re.sub(r'[\w\.+-]+@[\w\.-]+\.\w+', '', txt)
 
 
+# 1) remove the words either without any characters/numbers or long messy words
+# 2) join by space
 def rm_noise(ss):
-    # remove the words either without any characters/numbers or long messy words
     raw_words = re.split("[ \t]+", ss)
     cleaned_txt = []
     for rw in raw_words:
@@ -56,6 +57,11 @@ def rm_noise(ss):
     return ' '.join(cleaned_txt)
 
 
+# 1) fix contractions
+# 2) tokenize doc into sentences
+#   a. remove emails in each sentences
+#   b. [de-noise]remove non-words
+# 3) join sentences to a doc with new line
 def txt_clean(txt):
     # pp = re.compile("^[A-Za-z-]*$")
     try:

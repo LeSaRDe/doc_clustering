@@ -10,6 +10,7 @@ WV_MODEL = "/home/fcmeng/workspace/fcmeng-vt/nasari/NASARIembed+UMBC_w2v_model"
 g_wv_model = None
 g_serv_sock = None
 
+
 def load_nasari_w2v():
     global g_wv_model
     if not os.path.isfile(WV_MODEL):
@@ -17,6 +18,7 @@ def load_nasari_w2v():
         g_wv_model.save(WV_MODEL)
     g_wv_model = gensim.models.KeyedVectors.load(WV_MODEL)
     return g_wv_model
+
 
 def compute_ws(param):
     global g_wv_model
@@ -33,6 +35,7 @@ def compute_ws(param):
         print "[ERR]: at least one of the words does not exist: " + word_1 + ", " + word_2
     print "[DBG]: " + word_1 + ":" + word_2 + ":" + str(ws)
     g_serv_sock.sendto(str(ws), addr)
+
 
 def main():
     global g_wv_model
