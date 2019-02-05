@@ -62,3 +62,65 @@ Input: all words
 Output: Words pair-wise sim, save in table pairwise_sim
 
 Step7: word_clustering.py
+
+
+2019-2-4: About input to CoreNLP
+In our preivous implementation of CoreNLPWrap, we directly throw a piece of 
+text into CoreNLP to parse. We were expecting CoreNLP to split sentences from
+this text. However, this doesn't work for 20news, because quite a number of 
+text in 20news are not regular sentences. We will do a sentence splitting 
+by NLTK before throwing anything to CoreNLP, and use '\n' as the separator to
+organize the resulting "sentences" from NLTK. 
+
+Here is an issue if directly throw the reorganized text into CoreNLP. We found
+that it may not be able to split this text into correct sentences even when we
+have added a period (i.e. '.') at the end of each sentence. To solve this issue,
+we add another constructor for CoreNLPWrap. We manually split the input text 
+into sentences by '\n', then throw each sentence into CoreNLP. The reason we 
+have to do this is that otherwise the actual text input into CoreNLP is 
+unpredictable, and if the input text is too long, then CoreNLP will fail. Thus,
+by using our new constructor, we can control the lengths of text sent into 
+CoreNLP.
+
+
+2019-2-5: About preprocess 'pre_ner' text
+The major problems in 'pre_ner' are as follows:
+
+1. Some sentences are too long, i.e. longer than 2K chars. Such sentences can
+be regular sentences, tables or something else. The major obstacle because of 
+such sentences is that CoreNLP may not be able to parse them into parse trees.
+Out-of-memory and Timeout may happen. 
+
+2. Splitting long sentences into short ones may not smooth CoreNLP's job 
+completely. Some sentences, not too long, contain abnormally amount of 
+punctuations and spaces, which would result in failures of CoreNLP as well. 
+Specifically, the parse-tree component of CoreNLP obviously could not handle 
+text with a large amount of punctuations and spaces so well. 
+
+3. To solve these two problems, we first split long sentences (i.e. >= 2K chars)
+into short ones (i.e. <= 1K chars) without further stripping, and second, we 
+filter out from the resulting short sentences the ones that are longer than 
+900 chars and whose punctuation-space-ratios are greater than 20%. 
+The punctuation-space-ratio is computed as
+    p-s-ration = num of punctuations and spaces / length of sent
+The reason we use p-s-ratio is that this ratio would tell us in a great chance
+if a text is in fact a table. Lets take the average word length in regular
+sentences as 4 chars. Then if a sentence is 1K long yet without
+intense usage of punctuations, then there would be one punctuation or space 
+right after each word, which gives the 20% threshold of p-s-ratio.
+We have witnessed that these two conditions, 
+i.e. sent_length>=900 AND p-s-ratio>=20%, can detect almost all difficult 
+sentences for CoreNLP.
+
+4. There is an issue left in 3. We have observed that some sentences 
+(especially in talk.politics this category) are written in mostly short words 
+without intense useage of punctuations. The average word length in these 
+sentences is also approxiamtely 4. As a result, such sentense will also be 
+filtered out as abnormals. To solve this issue, we introduce anther condition,
+the punctuation-space-word-ratio, which is computed as
+  p-s-w-ratio = num of punctuations and spaces / num of Eng words
+W.r.t Eng words, we don't actually detect if a word is a legal English word. 
+Instead, as long as a string in a sentence is not a number nor a space, then 
+it is considered as a Eng word. This condition will give low ratios to regular
+sentences, while relatively high ratios to abnormal text. An impirical threshold
+for this condition w.r.t. 20news is 1.5. 
