@@ -18,7 +18,7 @@ def splite_sents(ss):
 
 
 def main():
-    DOCS_ROOT = "/home/fcmeng/PycharmProjects/doc_similarity/20news18828.db"
+    DOCS_ROOT = "/home/fcmeng/workspace/data/20news18828.db"
     conn = sqlite3.connect(DOCS_ROOT)
     cur = conn.cursor()
     cur.execute("SELECT doc_id, pre_ner FROM docs order by doc_id")
