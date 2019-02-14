@@ -124,3 +124,8 @@ Instead, as long as a string in a sentence is not a number nor a space, then
 it is considered as a Eng word. This condition will give low ratios to regular
 sentences, while relatively high ratios to abnormal text. An impirical threshold
 for this condition w.r.t. 20news is 1.5. 
+
+2019-2-13: 
+If ADW is in use, we must use its stable published jar pack instead of 
+their git repo. Also, we must use the Wordnet dick included in the jar pack
+instead of the Wordnet copy from Princeton's offical website.
