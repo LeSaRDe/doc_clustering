@@ -5,8 +5,8 @@ from multiprocessing.dummy import Pool
 import math
 
 SERV_PORT = 8306
-WV_MODEL_BIN = "/home/fcmeng/workspace/lib/NASARIembed+UMBC_w2v.bin"
-WV_MODEL = "/home/fcmeng/workspace/lib/NASARIembed+UMBC_w2v_model"
+WV_MODEL_BIN = "/home/{0}/workspace/lib/NASARIembed+UMBC_w2v.bin".format(os.environ['USER'])
+WV_MODEL = "/home/{0}/workspace/lib/NASARIembed+UMBC_w2v_model".format(os.environ['USER'])
 
 g_wv_model = None
 g_serv_sock = None
