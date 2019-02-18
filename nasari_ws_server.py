@@ -83,7 +83,7 @@ def main():
     global g_serv_sock
     g_serv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     g_serv_sock.bind(("", SERV_PORT))
-    t_pool = Pool(500)
+    t_pool = Pool(360)
     load_nasari_w2v()
     print "[DBG]: NASARI model loaded in."
     #print g_wv_model['customer']
