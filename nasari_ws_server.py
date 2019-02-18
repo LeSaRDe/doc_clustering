@@ -1,7 +1,8 @@
 import socket
 import gensim
 import os
-from multiprocessing.dummy import Pool
+from multiprocessing import Pool
+import multiprocessing
 import math
 
 SERV_PORT = 8306
@@ -77,24 +78,41 @@ def compute_ws(param):
     print "[DBG]: " + word_1 + ":" + word_2 + ":" + str(ws)
     g_serv_sock.sendto(str(ws), addr)
 
+def cool_down(l_ws_procs, max_ws_proc_count):
+    while True:
+        for ws_proc in l_ws_procs:
+            if not ws_proc.is_alive():
+                #print "[DBG]: %s is done." % ws_proc.pid
+                l_ws_procs.remove(ws_proc)
+        if len(l_ws_procs) < max_ws_proc_count:
+            break
 
 def main():
     global g_wv_model
     global g_serv_sock
     g_serv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     g_serv_sock.bind(("", SERV_PORT))
-    t_pool = Pool(360)
+    #t_pool = Pool(360)
     load_nasari_w2v()
     print "[DBG]: NASARI model loaded in."
+    max_ws_proc_count = multiprocessing.cpu_count()
+    #max_ws_proc_count = 24
+    print "[DBG]: Max %s cores are working." % max_ws_proc_count
+    l_ws_procs = []
     #print g_wv_model['customer']
     #print g_wv_model['notice']
     while True:
-       msg, addr = g_serv_sock.recvfrom(4096)
-       param = (msg, addr)
-       l_param = list()
-       l_param.append(param)
-       print l_param
-       t_pool.map(compute_ws, l_param)
+        if len(l_ws_procs) >= max_ws_proc_count:
+            cool_down(l_ws_procs, max_ws_proc_count)
+        msg, addr = g_serv_sock.recvfrom(4096)
+        param = (msg, addr)
+        l_param = list()
+        l_param.append(param)
+        #print l_param
+        ws_proc = multiprocessing.Process(target=compute_ws, args=l_param)
+        l_ws_procs.append(ws_proc)
+        #t_pool.map(compute_ws, l_param)
+        ws_proc.start()
 
 main()
 #load_nasari_w2v()
