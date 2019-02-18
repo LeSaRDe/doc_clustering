@@ -4,6 +4,7 @@ import os
 from multiprocessing import Pool
 import multiprocessing
 import math
+import threading
 
 SERV_PORT = 8306
 WV_MODEL_BIN = "/home/{0}/workspace/lib/NASARIembed+UMBC_w2v.bin".format(os.environ['USER'])
@@ -12,8 +13,8 @@ WV_MODEL = "/home/{0}/workspace/lib/NASARIembed+UMBC_w2v_model".format(os.enviro
 g_wv_model = None
 g_serv_sock = None
 
-g_sim_mode = 'wo'
-#g_sim_mode = 'cosine'
+#g_sim_mode = 'wo'
+g_sim_mode = 'cosine'
 
 
 def load_nasari_w2v():
@@ -87,6 +88,16 @@ def cool_down(l_ws_procs, max_ws_proc_count):
         if len(l_ws_procs) < max_ws_proc_count:
             break
 
+class ws_worker_thread(threading.Thread):
+    def __init__(self, thread_id, params):
+        threading.Thread.__init__(self)
+        self.m_thread_id = thread_id
+        self.m_params = params
+    
+    def run(self):
+        #print "[DBG]: thread_id = %s params = %s" % (self.m_thread_id, self.m_params)
+        compute_ws(self.m_params)
+
 def main():
     global g_wv_model
     global g_serv_sock
@@ -95,10 +106,11 @@ def main():
     #t_pool = Pool(360)
     load_nasari_w2v()
     print "[DBG]: NASARI model loaded in."
-    max_ws_proc_count = multiprocessing.cpu_count()
-    #max_ws_proc_count = 24
+    #max_ws_proc_count = multiprocessing.cpu_count()
+    max_ws_proc_count = 500
     print "[DBG]: Max %s cores are working." % max_ws_proc_count
     l_ws_procs = []
+    ws_proc_id = 0
     #print g_wv_model['customer']
     #print g_wv_model['notice']
     while True:
@@ -106,13 +118,15 @@ def main():
             cool_down(l_ws_procs, max_ws_proc_count)
         msg, addr = g_serv_sock.recvfrom(4096)
         param = (msg, addr)
-        l_param = list()
-        l_param.append(param)
+        #l_param = list()
+        #l_param.append(param)
         #print l_param
-        ws_proc = multiprocessing.Process(target=compute_ws, args=l_param)
+        #ws_proc = multiprocessing.Process(target=compute_ws, args=l_param)
+        ws_proc = ws_worker_thread(ws_proc_id, param)
         l_ws_procs.append(ws_proc)
         #t_pool.map(compute_ws, l_param)
         ws_proc.start()
+        ws_proc_id += 1
 
 main()
 #load_nasari_w2v()
