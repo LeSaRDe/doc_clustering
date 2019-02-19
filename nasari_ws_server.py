@@ -5,6 +5,8 @@ from multiprocessing import Pool
 import multiprocessing
 import math
 import threading
+import re
+import sys
 
 SERV_PORT = 8306
 WV_MODEL_BIN = "/home/{0}/workspace/lib/NASARIembed+UMBC_w2v.bin".format(os.environ['USER'])
@@ -99,15 +101,22 @@ class ws_worker_thread(threading.Thread):
         compute_ws(self.m_params)
 
 def main():
+    global SERV_PORT
     global g_wv_model
     global g_serv_sock
+
+    port_pattern = re.compile("[0-9]+")
+    if len(sys.argv) == 2 and port_pattern.match(sys.argv[1]):
+        SERV_PORT = int(sys.argv[1])
+        
     g_serv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    print "[DBG]: Bind to %s" % SERV_PORT
     g_serv_sock.bind(("", SERV_PORT))
     #t_pool = Pool(360)
     load_nasari_w2v()
     print "[DBG]: NASARI model loaded in."
     #max_ws_proc_count = multiprocessing.cpu_count()
-    max_ws_proc_count = 500
+    max_ws_proc_count = 1500
     print "[DBG]: Max %s cores are working." % max_ws_proc_count
     l_ws_procs = []
     ws_proc_id = 0
